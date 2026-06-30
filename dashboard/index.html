@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CloudOps Incident Intelligence Platform</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --border: #30363d;
+            --text: #e6edf3;
+            --muted: #8b949e;
+            --accent: #58a6ff;
+            --green: #3fb950;
+            --yellow: #d29922;
+            --orange: #f0883e;
+            --red: #f85149;
+            --purple: #bc8cff;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+        }
+
+        .header-left h1 {
+            font-size: 18px;
+        }
+
+        .header-left span {
+            font-size: 12px;
+            color: var(--muted);
+            display: block;
+            margin-top: 2px;
+        }
+
+        .header-right {
+            display: flex;
+            gap: 10px;
+        }
+
+        main {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 24px 32px;
+        }
+
+        #status-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 24px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+        }
+
+        .status-dot.error {
+            background: var(--red);
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .metric-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .metric-card .label {
+            font-size: 12px;
+            color: var(--muted);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .metric-card .value {
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .metric-card.critical .value {
+            color: var(--red);
+        }
+
+        .metric-card.high .value {
+            color: var(--orange);
+        }
+
+        .metric-card.open .value {
+            color: var(--yellow);
+        }
+
+        .metric-card.total .value {
+            color: var(--accent);
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar h2 {
+            font-size: 16px;
+            margin-right: auto;
+        }
+
+        select,
+        button {
+            font-size: 13px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        select {
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 6px 10px;
+        }
+
+        button {
+            padding: 6px 14px;
+            border: 1px solid var(--border);
+            font-weight: 500;
+        }
+
+        button:hover {
+            opacity: 0.8;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #0d1117;
+            border-color: var(--accent);
+        }
+
+        .btn-simulate {
+            background: var(--purple);
+            color: #0d1117;
+            border-color: var(--purple);
+        }
+
+        .btn-danger {
+            background: transparent;
+            color: var(--red);
+            border-color: var(--red);
+            padding: 3px 9px;
+            font-size: 11px;
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .table-wrap {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 10px 16px;
+            text-align: left;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--muted);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        tbody tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        td {
+            padding: 12px 16px;
+            vertical-align: top;
+        }
+
+        .td-id {
+            font-family: monospace;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .td-log {
+            max-width: 320px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .td-ai {
+            max-width: 300px;
+            font-size: 12px;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .td-time {
+            font-size: 12px;
+            color: var(--muted);
+            white-space: nowrap;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .badge-CRITICAL {
+            background: rgba(248, 81, 73, 0.15);
+            color: var(--red);
+            border: 1px solid rgba(248, 81, 73, 0.4);
+        }
+
+        .badge-HIGH {
+            background: rgba(240, 136, 62, 0.15);
+            color: var(--orange);
+            border: 1px solid rgba(240, 136, 62, 0.4);
+        }
+
+        .badge-MEDIUM {
+            background: rgba(210, 153, 34, 0.15);
+            color: var(--yellow);
+            border: 1px solid rgba(210, 153, 34, 0.4);
+        }
+
+        .badge-OPEN {
+            background: rgba(88, 166, 255, 0.1);
+            color: var(--accent);
+            border: 1px solid rgba(88, 166, 255, 0.3);
+        }
+
+        .badge-RESOLVED {
+            background: rgba(63, 185, 80, 0.1);
+            color: var(--green);
+            border: 1px solid rgba(63, 185, 80, 0.3);
+        }
+
+        .state-row td {
+            text-align: center;
+            padding: 48px;
+            color: var(--muted);
+        }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 200;
+            display: none;
+        }
+
+        .overlay.open {
+            display: block;
+        }
+
+        .detail-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: min(560px, 100vw);
+            background: var(--surface);
+            border-left: 1px solid var(--border);
+            z-index: 201;
+            overflow-y: auto;
+            transform: translateX(100%);
+            transition: transform 0.25s ease;
+            padding: 24px;
+        }
+
+        .detail-panel.open {
+            transform: translateX(0);
+        }
+
+        .detail-panel h3 {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .detail-section {
+            margin-bottom: 20px;
+        }
+
+        .detail-section .section-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .detail-section .raw-log {
+            font-family: monospace;
+            font-size: 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            word-break: break-all;
+            color: var(--orange);
+        }
+
+        .ai-block {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 14px;
+        }
+
+        .ai-row {
+            margin-bottom: 10px;
+        }
+
+        .ai-row .ai-label {
+            font-size: 11px;
+            color: var(--muted);
+            margin-bottom: 3px;
+        }
+
+        .detail-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 24px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        #toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 300;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 13px;
+            min-width: 240px;
+            border-left: 3px solid var(--green);
+        }
+
+        .toast.error {
+            border-left-color: var(--red);
+        }
+
+        .arch-banner {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .arch-label {
+            font-size: 11px;
+            color: var(--muted);
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .arch-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .arch-tag {
+            font-size: 11px;
+            padding: 3px 9px;
+            border-radius: 20px;
+            background: rgba(88, 166, 255, 0.08);
+            border: 1px solid rgba(88, 166, 255, 0.2);
+            color: var(--accent);
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="header-left">
+            <h1>☁️ CloudOps Incident Intelligence Platform</h1>
+            <span>AI-powered log analysis · AWS Serverless · Terraform + GitHub Actions</span>
+        </div>
+        <div class="header-right">
+            <button class="btn-simulate" onclick="simulateIncident()" id="sim-btn">⚡ Simulate Incident</button>
+            <button class="btn-primary" onclick="loadIncidents()">↻ Refresh</button>
+        </div>
+    </header>
+
+    <main>
+        <div id="status-bar">
+            <div class="status-dot" id="status-dot"></div>
+            <span id="status-text">Connecting to API…</span>
+        </div>
+
+        <div class="arch-banner">
+            <span class="arch-label">Stack</span>
+            <div class="arch-tags">
+                <span class="arch-tag">Lambda</span>
+                <span class="arch-tag">API Gateway</span>
+                <span class="arch-tag">DynamoDB</span>
+                <span class="arch-tag">Bedrock</span>
+                <span class="arch-tag">CloudWatch</span>
+                <span class="arch-tag">SNS</span>
+                <span class="arch-tag">GuardDuty</span>
+                <span class="arch-tag">S3</span>
+                <span class="arch-tag">VPC</span>
+                <span class="arch-tag">Terraform</span>
+                <span class="arch-tag">GitHub Actions</span>
+            </div>
+        </div>
+
+        <div class="metrics">
+            <div class="metric-card total">
+                <div class="label">Total Incidents</div>
+                <div class="value" id="m-total">—</div>
+            </div>
+            <div class="metric-card critical">
+                <div class="label">Critical</div>
+                <div class="value" id="m-critical">—</div>
+            </div>
+            <div class="metric-card high">
+                <div class="label">High</div>
+                <div class="value" id="m-high">—</div>
+            </div>
+            <div class="metric-card open">
+                <div class="label">Open</div>
+                <div class="value" id="m-open">—</div>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <h2>Incidents</h2>
+            <select id="severity-filter" onchange="loadIncidents()">
+                <option value="">All Severities</option>
+                <option value="CRITICAL">Critical</option>
+                <option value="HIGH">High</option>
+                <option value="MEDIUM">Medium</option>
+            </select>
+            <select id="status-filter" onchange="loadIncidents()">
+                <option value="">All Statuses</option>
+                <option value="OPEN">Open</option>
+                <option value="RESOLVED">Resolved</option>
+            </select>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Severity</th>
+                        <th>Incident ID</th>
+                        <th>Log Message</th>
+                        <th>AI Root Cause</th>
+                        <th>Status</th>
+                        <th>Time (UTC)</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="incidents-body">
+                    <tr class="state-row">
+                        <td colspan="7">Loading incidents…</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <div class="overlay" id="overlay" onclick="closePanel()"></div>
+    <div class="detail-panel" id="detail-panel">
+        <button class="close-btn" onclick="closePanel()">✕</button>
+        <h3>Incident Details</h3>
+        <div id="detail-content"></div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script>
+        const API_BASE = "https://ex5qslje1h.execute-api.us-east-1.amazonaws.com/prod";
+
+        let allIncidents = [];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            loadIncidents();
+            setInterval(loadIncidents, 30000);
+        });
+
+        async function loadIncidents() {
+            const severity = document.getElementById("severity-filter").value;
+            const status = document.getElementById("status-filter").value;
+            let url = `${API_BASE}/incidents?limit=50`;
+            if (severity) url += `&severity=${severity}`;
+            if (status) url += `&status=${status}`;
+
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                allIncidents = data.incidents || [];
+                renderTable(allIncidents);
+                updateMetrics(allIncidents);
+                setStatus("live", `Live · ${allIncidents.length} incidents · updated ${new Date().toLocaleTimeString()}`);
+            } catch (err) {
+                console.error(err);
+                setStatus("error", `API error — ${err.message}`);
+                document.getElementById("incidents-body").innerHTML =
+                    `<tr class="state-row"><td colspan="7" style="color:var(--red)">Failed to load. Check API_BASE in this file.</td></tr>`;
+            }
+        }
+
+        function renderTable(incidents) {
+            const tbody = document.getElementById("incidents-body");
+            if (!incidents.length) {
+                tbody.innerHTML = `<tr class="state-row"><td colspan="7">No incidents yet. Click ⚡ Simulate Incident.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = incidents.map(inc => `
+      <tr onclick="openPanel('${inc.incident_id}')">
+        <td><span class="badge badge-${inc.severity}">${inc.severity}</span></td>
+        <td class="td-id">${inc.incident_id.slice(0, 8)}…</td>
+        <td class="td-log" title="${esc(inc.raw_log)}">${esc(inc.raw_log)}</td>
+        <td class="td-ai" title="${esc(inc.root_cause)}">${esc(inc.root_cause || '—')}</td>
+        <td><span class="badge badge-${inc.status}">${inc.status}</span></td>
+        <td class="td-time">${new Date(inc.timestamp).toLocaleString("en-GB", { dateStyle: "short", timeStyle: "short" })}</td>
+        <td>${inc.status === "OPEN" ? `<button class="btn-danger" onclick="resolveIncident(event,'${inc.incident_id}')">Resolve</button>` : "✓"}</td>
+      </tr>
+    `).join("");
+        }
+
+        function updateMetrics(incidents) {
+            document.getElementById("m-total").textContent = incidents.length;
+            document.getElementById("m-critical").textContent = incidents.filter(i => i.severity === "CRITICAL").length;
+            document.getElementById("m-high").textContent = incidents.filter(i => i.severity === "HIGH").length;
+            document.getElementById("m-open").textContent = incidents.filter(i => i.status === "OPEN").length;
+        }
+
+        async function simulateIncident() {
+            const btn = document.getElementById("sim-btn");
+            btn.disabled = true;
+            btn.textContent = "⏳ Simulating…";
+            try {
+                const res = await fetch(`${API_BASE}/incidents/simulate`, { method: "POST" });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                toast(`Incident created: ${data.severity}`, "success");
+                await loadIncidents();
+            } catch (err) {
+                toast(`Simulation failed: ${err.message}`, "error");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "⚡ Simulate Incident";
+            }
+        }
+
+        async function resolveIncident(event, id) {
+            event.stopPropagation();
+            try {
+                const res = await fetch(`${API_BASE}/incidents/${id}`, { method: "DELETE" });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                toast("Incident resolved", "success");
+                await loadIncidents();
+                closePanel();
+            } catch (err) {
+                toast(`Failed: ${err.message}`, "error");
+            }
+        }
+
+        function openPanel(id) {
+            const inc = allIncidents.find(i => i.incident_id === id);
+            if (!inc) return;
+            document.getElementById("detail-content").innerHTML = `
+      <div class="detail-section"><div class="section-label">Incident ID</div><div style="font-family:monospace;font-size:12px">${inc.incident_id}</div></div>
+      <div class="detail-section" style="display:flex;gap:12px">
+        <div><div class="section-label">Severity</div><span class="badge badge-${inc.severity}">${inc.severity}</span></div>
+        <div><div class="section-label">Status</div><span class="badge badge-${inc.status}">${inc.status}</span></div>
+      </div>
+      <div class="detail-section"><div class="section-label">Timestamp</div>${new Date(inc.timestamp).toLocaleString()}</div>
+      <div class="detail-section"><div class="section-label">Raw Log</div><div class="raw-log">${esc(inc.raw_log)}</div></div>
+      <div class="detail-section">
+        <div class="section-label">🤖 AI Analysis</div>
+        <div class="ai-block">
+          <div class="ai-row"><div class="ai-label">Root Cause</div>${esc(inc.root_cause || '—')}</div>
+          <div class="ai-row"><div class="ai-label">Impact</div>${esc(inc.impact || '—')}</div>
+          <div class="ai-row"><div class="ai-label">Recommended Action</div>${esc(inc.recommended_action || '—')}</div>
+          <div class="ai-row"><div class="ai-label">Est. Resolution</div>${esc(inc.estimated_resolution_time || '—')}</div>
+        </div>
+      </div>
+      <div class="detail-actions">
+        ${inc.status === "OPEN" ? `<button class="btn-danger" style="padding:8px 16px" onclick="resolveIncident(event,'${inc.incident_id}')">Mark Resolved</button>` : ""}
+        <button onclick="closePanel()" style="border:1px solid var(--border);background:transparent;color:var(--text);padding:8px 16px;border-radius:6px;cursor:pointer">Close</button>
+      </div>
+    `;
+            document.getElementById("overlay").classList.add("open");
+            document.getElementById("detail-panel").classList.add("open");
+        }
+
+        function closePanel() {
+            document.getElementById("overlay").classList.remove("open");
+            document.getElementById("detail-panel").classList.remove("open");
+        }
+
+        function setStatus(type, text) {
+            document.getElementById("status-dot").className = `status-dot ${type === "error" ? "error" : ""}`;
+            document.getElementById("status-text").textContent = text;
+        }
+
+        function esc(str) {
+            if (!str) return "";
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+
+        function toast(message, type = "success") {
+            const el = document.createElement("div");
+            el.className = `toast ${type}`;
+            el.textContent = message;
+            document.getElementById("toast-container").appendChild(el);
+            setTimeout(() => el.remove(), 4000);
+        }
+    </script>
+</body>
+
+</html>

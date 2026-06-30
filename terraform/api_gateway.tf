@@ -110,6 +110,7 @@ resource "aws_api_gateway_integration" "options_incidents" {
   request_templates = {
     "application/json" = "{\"statusCode\": 200}"
   }
+  depends_on = [aws_api_gateway_method.options_incidents]
 }
 
 resource "aws_api_gateway_method_response" "options_incidents" {
